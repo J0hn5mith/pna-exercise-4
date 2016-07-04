@@ -3,7 +3,8 @@
 #include "matrix.hpp"
 #include <stdio.h>
 #include <cstdlib>
-#define MATRIX_DIMENSION 10
+#define DIMENSION 3
+#define SIZE DIMENSION*DIMENSION
 
 
 TEST_CASE( "Basic matrix operations", "[factorial]" ) {
@@ -12,56 +13,49 @@ TEST_CASE( "Basic matrix operations", "[factorial]" ) {
         {1,2,3},
         {1,3,7},
     };
-    float TEST_MATRIX_2[3][3] = {
-        {1,0,0},
-        {0,1,0},
-        {0,0,1},
+    float TEST_MATRIX_2[9] = {
+        1,2,3,
+        1,2,3,
+        1,3,7,
     };
-    Matrix* m = new Matrix(3);
-    Matrix* m2 = new Matrix(3);
-    m->set((float*)TEST_MATRIX);
-    m2->set((float*)TEST_MATRIX);
-
-    for (int i = 0; i < m->size(); ++i) {
-        REQUIRE( m->values[i] == ((float*)TEST_MATRIX)[i]);
-    }
-
-    m->sub(m2);
-    for (int i = 0; i < m->dimension * m->dimension; ++i) {
-        REQUIRE( m->values[i] == 0 );
-    }
-
-    m->set((float*)TEST_MATRIX);
-    m2->set((float*)TEST_MATRIX_2);
-    m->mul(m2);
-
-    for (int i = 0; i < m->size(); ++i) {
-        REQUIRE( m->values[i] == ((float*)TEST_MATRIX)[i] );
-    }
-
-}
-
-TEST_CASE( "LU decomposition", "" ) {
-    std::srand(std::time(0));
-    float TEST_MATRIX[MATRIX_DIMENSION][MATRIX_DIMENSION] = {0};
-    for (int i = 0; i < MATRIX_DIMENSION; ++i) {
-        for (int ii = 0; ii < MATRIX_DIMENSION; ++ii) {
-            TEST_MATRIX[i][ii] = (float)(std::rand()%20);
+    int counter = 0;
+    for (int i = 0; i < DIMENSION; ++i) {
+        for (int ii = 0; ii < DIMENSION; ++ii) {
+            REQUIRE( get(TEST_MATRIX_2,i,ii, DIMENSION) == TEST_MATRIX[i][ii] );
+            counter++;
         }
     }
 
-    Matrix* a = new Matrix(3);
-    a->set((float*)TEST_MATRIX);
-
-    Matrix* l = new Matrix(3);
-    Matrix* u = new Matrix(3);
-
-    a->lu(l,u);
-    l->mul(u);
-
-    for (int i = 0; i < l->size(); ++i) {
-        REQUIRE( l->values[i] == a->values[i] );
+    float matrix[9];
+    for (int i = 0; i < DIMENSION; ++i) {
+        for (int ii = 0; ii < DIMENSION; ++ii) {
+            set(matrix, i, ii, TEST_MATRIX[i][ii], DIMENSION);
+        }
     }
 
-    delete[] a->values;
+    for (int i = 0; i < DIMENSION; ++i) {
+        for (int ii = 0; ii < DIMENSION; ++ii) {
+            REQUIRE(get(matrix,i,ii, DIMENSION) == TEST_MATRIX[i][ii] );
+        }
+    }
+
+    float l_matrix[9] = {0};
+    float u_matrix[9] = {0};
+    float row[4] = {1, 1, 1, 1};
+
+    update_values((float*)l_matrix, (float*)u_matrix, 0, 1, (float*)row, DIMENSION);
+
+    for (int i = 0; i < DIMENSION; ++i) {
+        for (int ii = 0; ii < DIMENSION; ++ii) {
+            if(i == 1) {
+                REQUIRE(get(u_matrix,i,ii, DIMENSION) == 1 );
+            } else {
+                REQUIRE(get(u_matrix,i,ii, DIMENSION) == 0 );
+            }
+        }
+    }
+    REQUIRE(get(l_matrix,1,0, DIMENSION) == 1 );
+}
+
+TEST_CASE( "LU", "[lu]" ) {
 }

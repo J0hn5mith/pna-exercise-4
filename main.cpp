@@ -3,8 +3,10 @@
 #include <cstdlib>
 #include <mpi.h>
 #include <ctime>
+#include "matrix.hpp"
 
-#define DIMENSION 10
+
+#define DIMENSION 5
 struct Node{
     int rank;
     int world_size;
@@ -26,16 +28,6 @@ struct Node init(){
 }
 
 
-float* generate_matrix(){
-    std::srand(std::time(0));
-    float* matrix = (float*)malloc(DIMENSION*DIMENSION*sizeof(float));
-    for (int i = 0; i < DIMENSION*DIMENSION; ++i) {
-        matrix[i] = (float)(std::rand()%10);
-    }
-
-    return (float*)matrix;
-}
-
 float*  receive_matrix(){
 }
 
@@ -45,44 +37,24 @@ float* broadcast_matrix(float* matrix){
 
 float* init_matrix(struct Node* node){
     if(node->rank == 0){
-        float* matrix = generate_matrix();
+        float* matrix = generate_matrix(DIMENSION);
         return broadcast_matrix(matrix);
     } else {
         return receive_matrix();
     }
 }
 
-float* generate_unit_matrix(){
-    float* matrix = (float*)malloc(DIMENSION*DIMENSION*sizeof(float));
-    int row = -1;
-    for (int i = 0; i < DIMENSION*DIMENSION; ++i) {
-        int column = i % DIMENSION;
-        if(column == 0){
-            row++;
+
+float* process_row(int step, int row, float* matrix, float* new_row){
+    float l  = set(matrix, row, step, get(matrix, row,step, DIMENSION)/get(matrix, step,step, DIMENSION), DIMENSION);
+    new_row[DIMENSION] = l;
+    for (int column = 0; column < DIMENSION; column++) {
+        if(column >= row){
+            float d = get(matrix, row, column, DIMENSION) - l * get(matrix, step, column, DIMENSION);
+            new_row[column] = d;
+        } else { // Set all other values to 0 in same iteration
+            new_row[column] = 0;
         }
-        if (column == row){
-            matrix[i] = 1;
-        } else {
-            matrix[i] = 0;
-        }
-    }
-    return (float*)matrix;
-}
-
-float  set(float* matrix, int row, int column, float value){
-    matrix[DIMENSION*row + column] = value;
-    return value;
-}
-
-float get(float* matrix, int row, int column){
-    return matrix[DIMENSION*row + column];
-}
-
-void process_row(int step, int row, float* matrix){
-    float new_row[DIMENSION] = {0};
-    float l  = set(matrix, row, step, get(matrix, row,step)/get(matrix, step,step));
-    for (int column = row; column < DIMENSION; column++) {
-        new_row[column] = get(matrix, row, column) - l * get(matrix, step, column);
     }
 }
 
@@ -94,22 +66,25 @@ void receive(){
 int main(int argc, char *argv[])
 {
     struct Node node = init();
-    float* matrix = generate_matrix();
-    float* l = matrix;
-    float* u = generate_unit_matrix();
+    float* matrix = generate_matrix(DIMENSION);
+    float* u = generate_unit_matrix(DIMENSION);
+    copy_matrix(matrix, u, DIMENSION);
+    float* l = generate_unit_matrix(DIMENSION);
+    float* row_buffer = (float*)malloc((DIMENSION + 1)*sizeof(float));
 
     for (int step = 0; step < DIMENSION; ++step) {
-        for (int row = 0; row < DIMENSION; ++row) {
+        for (int row = step + 1; row < DIMENSION; ++row) {
             if(row % node.world_size == node.rank){
-                process_row(step, row, u);
+                process_row(step, row, u, row_buffer);
+                update_values(l, u, step, row, row_buffer, DIMENSION);
             }
         }
         receive();
     }
     return 0;
-    //delete[] matrix;
-    //delete[] l;
-    //delete[] u;
+    delete[] matrix;
+    delete[] l;
+    delete[] u;
 }
 
 
