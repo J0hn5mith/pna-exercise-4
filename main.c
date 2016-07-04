@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <cstdlib>
 #include <mpi.h>
-#include <ctime>
-#include "matrix.hpp"
+#include "matrix.h"
 
 
 #define DIMENSION 10

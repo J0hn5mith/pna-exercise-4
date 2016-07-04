@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <cstdlib>
-#include <ctime>
 
 void print_row(float* row, int dimension){
     for (int i = 0; i < dimension; ++i) {
@@ -18,10 +16,10 @@ void print_matrix(float* matrix, int dimension){
 }
 
 float* generate_matrix(int dimension){
-    std::srand(std::time(0));
+    srand(time(0));
     float* matrix = (float*)malloc(dimension*dimension*sizeof(float));
     for (int i = 0; i < dimension*dimension; ++i) {
-        matrix[i] = (float)(std::rand()%9 + 1);
+        matrix[i] = (float)(rand()%9 + 1);
     }
 
     return (float*)matrix;
@@ -49,7 +47,7 @@ float set(float* matrix, int row, int column, float value, int dimension){
     return value;
 }
 
-void set(float* matrix, int row, float* values, int dimension){
+void set_line(float* matrix, int row, float* values, int dimension){
     int offset = dimension*row;
     for (int i = 0; i < dimension; ++i) {
         matrix[offset + i] = values[i];
@@ -61,7 +59,7 @@ float get(float* matrix, int row, int column, int dimension){
 }
 
 void update_values(float* l, float* u, int step, int row, float* new_values, int dimension){
-    set(u, row, new_values, dimension);
+    set_line(u, row, new_values, dimension);
     set(l, row, step, new_values[dimension], dimension);
 }
 
@@ -86,14 +84,14 @@ float*  mul_matrix(float* left, float* right, int dimension){
     return result;
 }
 
-bool  compare_matrix(float* left, float* right, int dimension){
+int  compare_matrix(float* left, float* right, int dimension){
     for (int i = 0; i < dimension; ++i) {
         for (int ii = 0; ii < dimension; ++ii) {
             if(abs(get(left, i, ii, dimension)  - get(right, i, ii, dimension)) > 0.001){
                 printf("ERROR: %d %d\n", i, ii);
-                return false;
+                return 0;
                 }
         }
     }
-    return true;
+    return 1;
 }
