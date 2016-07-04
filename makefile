@@ -10,12 +10,11 @@ TEST_SOURCES=test.cpp $(COMMON_SOURCES)
 TEST_OBJECTS=$(TEST_SOURCES:.cpp=.o)
 EXECUTABLE=app
 MPI=`which mpirun`
+NUM_THREADS=1
 
 all: compile link run clean
-	echo "End all"
 
 test: run_tests clean
-	echo "End Tests"
 
 run_tests: $(TEST_OBJECTS)
 	$(CCOMPILER) $(LDFLAGS) $(TEST_OBJECTS)  -o tests
@@ -24,8 +23,7 @@ run_tests: $(TEST_OBJECTS)
 compile: $(SOURCES)
 
 $(EXECUTABLE): $(OBJECTS)
-	mpicc $(LDFLAGS) $(OBJECTS) -o $@
-	#$(MPI_CCOMPILER) $(LDFLAGS) $(OBJECTS) -o $@
+	$(MPI_CCOMPILER) $(LDFLAGS) $(OBJECTS) -o $@
 
 .cpp.o:
 	$(CCOMPILER) $(CFLAGS) $< -o $@
@@ -33,7 +31,7 @@ $(EXECUTABLE): $(OBJECTS)
 link: $(EXECUTABLE)
 
 run:
-	./$(EXECUTABLE)
+	$(MPI) -n ${NUM_THREADS} ./$(EXECUTABLE)
 
 clean:
 	rm *o

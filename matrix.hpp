@@ -7,3 +7,5 @@ void update_values(float* l, float* u, int step, int row, float* new_values, int
 void print_row(float* row, int dimension);
 void print_matrix(float* matrix, int dimension);
 void copy_matrix(float* original, float* copy, int dimension);
+float*  mul_matrix(float* left, float* right, int dimension);
+bool  compare_matrix(float* left, float* right, int dimension);

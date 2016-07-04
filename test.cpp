@@ -18,6 +18,11 @@ TEST_CASE( "Basic matrix operations", "[factorial]" ) {
         1,2,3,
         1,3,7,
     };
+    float UNIT[9] = {
+        1,0,0,
+        0,1,0,
+        0,0,1,
+    };
     int counter = 0;
     for (int i = 0; i < DIMENSION; ++i) {
         for (int ii = 0; ii < DIMENSION; ++ii) {
@@ -55,6 +60,14 @@ TEST_CASE( "Basic matrix operations", "[factorial]" ) {
         }
     }
     REQUIRE(get(l_matrix,1,0, DIMENSION) == 1 );
+    float* mul_mat = mul_matrix(TEST_MATRIX_2, UNIT, DIMENSION);
+    print_matrix(mul_mat, DIMENSION);
+    for (int i = 0; i < DIMENSION; ++i) {
+        for (int ii = 0; ii < DIMENSION; ++ii) {
+                REQUIRE(get(mul_mat,i,ii, DIMENSION) == get(TEST_MATRIX_2,i,ii, DIMENSION)  );
+        }
+    }
+
 }
 
 TEST_CASE( "LU", "[lu]" ) {
