@@ -1,7 +1,15 @@
 #map <leader>r :!c++ -O3 -o app %; ./app<CR>
+PLATFORM=0
+
 CCOMPILER=c++
+ifeq ($(PLATFORM), 0)
 MPI_CCOMPILER=mpicc
 CFLAGS=-c -Wall
+else
+MPI_CCOMPILER=mpiFCCpx
+CFLAGS=-Kfast
+endif
+
 LDFLAGS=
 COMMON_SOURCES=matrix.cpp
 SOURCES=main.cpp $(COMMON_SOURCES)
@@ -35,5 +43,3 @@ run:
 
 clean:
 	rm *o
-
-
