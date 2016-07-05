@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include <math.h>
 
 
 #define DIMENSION 100
@@ -88,6 +89,13 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     double start_time = MPI_Wtime();
     for (int step = 0; step < DIMENSION; ++step) {
+        int remaining_rows = DIMENSION - step - 1;
+        int block_size = ceil(remaining_rows/node.world_size);
+        int start = block_size * node.rank;
+        if(node.rank + 1 == node.world_size){
+            // If block is last block it might be smaller
+            block_size = remaining_rows%node.world_size;
+        }
         for (int row = step + 1; row < DIMENSION; ++row) {
             int buffer_row = row/node.world_size;
             float* row_buffer = buffer + buffer_row * (DIMENSION + 1);
