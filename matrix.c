@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 void print_row(float* row, int dimension){
     for (int i = 0; i < dimension; ++i) {
@@ -51,9 +52,8 @@ float set(float* matrix, int row, int column, float value, int dimension){
 
 void set_line(float* matrix, int row, float* values, int dimension){
     int offset = dimension*row;
-    for (int i = 0; i < dimension; ++i) {
-        matrix[offset + i] = values[i];
-    }
+    float* start = matrix + offset;
+    memcpy(start, values, dimension*sizeof(float));
 }
 
 float get(float* matrix, int row, int column, int dimension){
@@ -66,9 +66,7 @@ void update_values(float* l, float* u, int step, int row, float* new_values, int
 }
 
 void copy_matrix(float* original, float* copy, int dimension){
-    for (int i = 0; i < dimension*dimension; ++i) {
-        copy[i] = original[i];
-    }
+    memcpy(original, copy, dimension*dimension*sizeof(float));
 }
 
 float*  mul_matrix(float* left, float* right, int dimension){

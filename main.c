@@ -4,7 +4,7 @@
 #include <mpi.h>
 
 
-#define DIMENSION 1000
+#define DIMENSION 500
 #define SIZE DIMENSION*DIMENSION
 struct Node{
     int rank;
