@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
     float* row_buffer = (float*)malloc((DIMENSION + 1)*sizeof(float));
 
     MPI_Barrier(MPI_COMM_WORLD);
+    double start_time = MPI_Wtime();
     for (int step = 0; step < DIMENSION; ++step) {
         for (int row = step + 1; row < DIMENSION; ++row) {
             if(row % node.world_size == node.rank){
@@ -99,6 +100,8 @@ int main(int argc, char *argv[])
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
+    double end_time = MPI_Wtime();
+    double  duration = end_time - start_time;
 
     MPI_Finalize();
     float* check = mul_matrix(l, u, DIMENSION);
@@ -107,6 +110,7 @@ int main(int argc, char *argv[])
     if(!compare_matrix(matrix, check, DIMENSION)){
         return 1;
     }
+    printf("Duration: %f", duration);
 
     return 0;
 }
