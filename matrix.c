@@ -16,7 +16,8 @@ void print_matrix(float* matrix, int dimension){
 }
 
 float* generate_matrix(int dimension){
-    srand(time(0));
+    //srand(time(0));
+    srand(1);
     float* matrix = (float*)malloc(dimension*dimension*sizeof(float));
     for (int i = 0; i < dimension*dimension; ++i) {
         matrix[i] = (float)(rand()%9 + 1);

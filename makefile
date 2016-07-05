@@ -1,11 +1,12 @@
 #map <leader>r :!c++ -O3 -o app %; ./app<CR>
-PLATFORM=0
+PLATFORM=1
 
-CCOMPILER=gcc
 ifeq ($(PLATFORM), 0)
+CCOMPILER=gcc
 MPI_CCOMPILER=mpicc
 CFLAGS=-c -Wall
 else
+CCOMPILER=mpiFCCpx
 MPI_CCOMPILER=mpiFCCpx
 CFLAGS=-Kfast
 endif
@@ -28,10 +29,16 @@ run_tests: $(TEST_OBJECTS)
 	$(CCOMPILER) $(LDFLAGS) $(TEST_OBJECTS)  -o tests
 	./tests
 
+ifeq ($(PLATFORM), 0)
 compile: $(SOURCES)
+else
+compile:
+	$(CCOMPILER) $(CFLAGS) $(SOURCES) -o $(EXECUTABLE)
+endif
 
 $(EXECUTABLE): $(OBJECTS)
-	$(MPI_CCOMPILER) $(LDFLAGS) $(OBJECTS) -o $@
+#/$(MPI_CCOMPILER) $(LDFLAGS) $(OBJECTS) -o $@
+	$(MPI_CCOMPILER) $(LDFLAGS) $(OBJECTS)
 
 .c.o:
 	$(CCOMPILER) $(CFLAGS) $< -o $@

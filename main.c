@@ -1,7 +1,7 @@
+#include "matrix.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include "matrix.h"
 
 
 #define DIMENSION 10
