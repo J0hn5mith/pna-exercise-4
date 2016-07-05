@@ -108,6 +108,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    printf("Sucessfully finished job");
     return 0;
 }
 

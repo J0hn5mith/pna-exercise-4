@@ -46,7 +46,11 @@ $(EXECUTABLE): $(OBJECTS)
 link: $(EXECUTABLE)
 
 run:
+ifeq ($(PLATFORM), 0)
 	$(MPI) -n ${NUM_THREADS} ./$(EXECUTABLE)
+else
+	pjsub job.zsh
+endif
 
 clean:
 	rm *o
