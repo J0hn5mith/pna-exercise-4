@@ -1,5 +1,5 @@
 #map <leader>r :!c++ -O3 -o app %; ./app<CR>
-PLATFORM=1
+PLATFORM=0
 
 ifeq ($(PLATFORM), 0)
 CCOMPILER=gcc
@@ -37,8 +37,11 @@ compile:
 endif
 
 $(EXECUTABLE): $(OBJECTS)
-#/$(MPI_CCOMPILER) $(LDFLAGS) $(OBJECTS) -o $@
+ifeq ($(PLATFORM), 0)
+	$(MPI_CCOMPILER) $(LDFLAGS) $(OBJECTS) -o $@
+else
 	$(MPI_CCOMPILER) $(LDFLAGS) $(OBJECTS)
+endif
 
 .c.o:
 	$(CCOMPILER) $(CFLAGS) $< -o $@

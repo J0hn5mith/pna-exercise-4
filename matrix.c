@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 void print_row(float* row, int dimension){
     for (int i = 0; i < dimension; ++i) {
@@ -88,8 +89,9 @@ float*  mul_matrix(float* left, float* right, int dimension){
 int  compare_matrix(float* left, float* right, int dimension){
     for (int i = 0; i < dimension; ++i) {
         for (int ii = 0; ii < dimension; ++ii) {
-            if(abs(get(left, i, ii, dimension)  - get(right, i, ii, dimension)) > 0.001){
-                printf("ERROR: %d %d\n", i, ii);
+            float difference = fabsf(get(left, i, ii, dimension)  - get(right, i, ii, dimension));
+            if(difference > 0.1){
+                printf("ERROR: %f (%d %d)\n",difference, i, ii);
                 return 0;
                 }
         }

@@ -4,7 +4,7 @@
 #include <mpi.h>
 
 
-#define DIMENSION 10
+#define DIMENSION 20
 #define SIZE DIMENSION*DIMENSION
 struct Node{
     int rank;
@@ -66,36 +66,52 @@ void broadcast_row(float* data, struct Node node){
             );
 }
 
-void broadcast_row_by_rank(float* data, int sender_rank){
-    MPI_Bcast(
-            (void*) data,
+void broadcast_row_by_rank(float* data, int sender_rank, MPI_Request* request){
+    MPI_Ibcast(
+            data,
             DIMENSION + 1,
             MPI_FLOAT,
             sender_rank,
-            MPI_COMM_WORLD
+            MPI_COMM_WORLD,
+            request
             );
 }
 
+void verbose_mpi_status(MPI_Status status){
+    if(status.MPI_ERROR == MPI_SUCCESS){
+        printf("Success\n");
+    } else if(status.MPI_ERROR == MPI_ERR_REQUEST){
+        printf("MPI_ERR_REQUEST\n");
+    } else if(status.MPI_ERROR == MPI_ERR_ARG){
+        printf("MPI_ERR_ARG\n");
+    } else {
+        printf("Unknown\n");
+    }
+}
 int main(int argc, char *argv[])
 {
-    struct Node node = init();
-    MPI_Barrier(MPI_COMM_WORLD);
-    float* matrix = init_matrix(node);
+    MPI_Request request = MPI_REQUEST_NULL;
+    MPI_Status status;
 
+    struct Node node = init();
+
+    float* matrix = init_matrix(node);
     float* u = generate_unit_matrix(DIMENSION);
     copy_matrix(matrix, u, DIMENSION);
     float* l = generate_unit_matrix(DIMENSION);
-    float* row_buffer = (float*)malloc((DIMENSION + 1)*sizeof(float));
+    float* buffer = (float*)malloc(((DIMENSION+1) * (DIMENSION + 1))*sizeof(float));
 
     MPI_Barrier(MPI_COMM_WORLD);
     double start_time = MPI_Wtime();
     for (int step = 0; step < DIMENSION; ++step) {
         for (int row = step + 1; row < DIMENSION; ++row) {
+            float* row_buffer = buffer + row * (DIMENSION + 1);
             if(row % node.world_size == node.rank){
                 process_row(step, row, u, row_buffer);
             }
-            MPI_Barrier(MPI_COMM_WORLD);
-            broadcast_row_by_rank(row_buffer, row%node.world_size);
+
+            broadcast_row_by_rank(row_buffer, row%node.world_size, &request);
+            MPI_Wait(&request, &status);
             update_values(l, u, step, row, row_buffer, DIMENSION);
         }
     }
@@ -110,9 +126,12 @@ int main(int argc, char *argv[])
     if(!compare_matrix(matrix, check, DIMENSION)){
         return 1;
     }
-    printf("Duration: %f", duration);
 
-    printf("Sucessfully finished job");
+    if(node.rank == 0){
+        printf("Duration: %f\n", duration);
+        printf("Successfully finished job\n");
+    }
+
     return 0;
 }
 
