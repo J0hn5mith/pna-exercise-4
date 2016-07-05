@@ -1,7 +1,7 @@
+#include "matrix.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include "matrix.h"
 
 
 #define DIMENSION 10
@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
     }
     printf("Duration: %f", duration);
 
+    printf("Sucessfully finished job");
     return 0;
 }
 
