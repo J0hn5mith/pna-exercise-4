@@ -4,7 +4,7 @@
 #include <mpi.h>
 
 
-#define DIMENSION 20
+#define DIMENSION 1000
 #define SIZE DIMENSION*DIMENSION
 struct Node{
     int rank;
@@ -77,6 +77,16 @@ void broadcast_row_by_rank(float* data, int sender_rank, MPI_Request* request){
             );
 }
 
+void broadcast_matrix_by_rank(float* data, int sender_rank){
+    MPI_Bcast(
+            data,
+            DIMENSION * (DIMENSION + 1),
+            MPI_FLOAT,
+            sender_rank,
+            MPI_COMM_WORLD
+            );
+}
+
 void verbose_mpi_status(MPI_Status status){
     if(status.MPI_ERROR == MPI_SUCCESS){
         printf("Success\n");
@@ -90,9 +100,6 @@ void verbose_mpi_status(MPI_Status status){
 }
 int main(int argc, char *argv[])
 {
-    MPI_Request request = MPI_REQUEST_NULL;
-    MPI_Status status;
-
     struct Node node = init();
 
     float* matrix = init_matrix(node);
@@ -100,6 +107,7 @@ int main(int argc, char *argv[])
     copy_matrix(matrix, u, DIMENSION);
     float* l = generate_unit_matrix(DIMENSION);
     float* buffer = (float*)malloc(((DIMENSION+1) * (DIMENSION + 1))*sizeof(float));
+    float* receive_buffer = (float*)malloc(((DIMENSION+1) * (DIMENSION + 1))*sizeof(float));
 
     MPI_Barrier(MPI_COMM_WORLD);
     double start_time = MPI_Wtime();
@@ -108,11 +116,21 @@ int main(int argc, char *argv[])
             float* row_buffer = buffer + row * (DIMENSION + 1);
             if(row % node.world_size == node.rank){
                 process_row(step, row, u, row_buffer);
+                update_values(l, u, step, row, row_buffer, DIMENSION);
             }
-
-            broadcast_row_by_rank(row_buffer, row%node.world_size, &request);
-            MPI_Wait(&request, &status);
-            update_values(l, u, step, row, row_buffer, DIMENSION);
+        }
+        for (int worker = 0; worker < node.world_size; ++worker) {
+            if(worker == node.rank){ // send values
+                broadcast_matrix_by_rank(buffer, worker);
+            } else { //receive values
+                broadcast_matrix_by_rank(receive_buffer, worker);
+                for (int row = step + 1; row < DIMENSION; ++row) {
+                    if(row % node.world_size == worker){
+                        float* row_buffer = receive_buffer + row * (DIMENSION + 1);
+                        update_values(l, u, step, row, row_buffer, DIMENSION);
+                    }
+                }
+            }
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
