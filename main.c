@@ -113,20 +113,26 @@ int main(int argc, char *argv[])
     double start_time = MPI_Wtime();
     for (int step = 0; step < DIMENSION; ++step) {
         for (int row = step + 1; row < DIMENSION; ++row) {
-            float* row_buffer = buffer + row * (DIMENSION + 1);
+            int buffer_row = row/node.world_size;
+            float* row_buffer = buffer + buffer_row * (DIMENSION + 1);
             if(row % node.world_size == node.rank){
                 process_row(step, row, u, row_buffer);
                 update_values(l, u, step, row, row_buffer, DIMENSION);
             }
         }
         for (int worker = 0; worker < node.world_size; ++worker) {
+            float* active_buffer;
             if(worker == node.rank){ // send values
-                broadcast_matrix_by_rank(buffer, worker);
+                active_buffer = buffer;
             } else { //receive values
-                broadcast_matrix_by_rank(receive_buffer, worker);
+                active_buffer = receive_buffer;
+            }
+            broadcast_matrix_by_rank(active_buffer, worker);
+            if(worker != node.rank){ // send values
                 for (int row = step + 1; row < DIMENSION; ++row) {
                     if(row % node.world_size == worker){
-                        float* row_buffer = receive_buffer + row * (DIMENSION + 1);
+                        int buffer_row = row/node.world_size;
+                        float* row_buffer = receive_buffer + buffer_row * (DIMENSION + 1);
                         update_values(l, u, step, row, row_buffer, DIMENSION);
                     }
                 }
@@ -152,5 +158,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-
