@@ -4,7 +4,7 @@
 #include <mpi.h>
 
 
-#define DIMENSION 500
+#define DIMENSION 100
 #define SIZE DIMENSION*DIMENSION
 struct Node{
     int rank;
@@ -46,35 +46,11 @@ float* init_matrix(struct Node node){
 void process_row(int step, int row, float* matrix, float* new_row){
     float l  = get(matrix, row, step, DIMENSION)/get(matrix, step, step, DIMENSION);
     new_row[DIMENSION] = l;
-    for (int column = 0; column < DIMENSION; column++) {
-        if(column >= step){
-            float d = get(matrix, row, column, DIMENSION) - l * get(matrix, step, column, DIMENSION);
-            new_row[column] = d;
-        } else { // Set all other values to 0 in same iteration
-            new_row[column] = 0;
-        }
+    new_row[DIMENSION] = l;
+    for (int column = step; column < DIMENSION; column++) {
+        new_row[column] = get(matrix, row, column, DIMENSION) - l\
+                          * get(matrix, step, column, DIMENSION);
     }
-}
-
-void broadcast_row(float* data, struct Node node){
-    MPI_Bcast(
-            (void*) data,
-            DIMENSION + 1,
-            MPI_FLOAT,
-            node.rank,
-            MPI_COMM_WORLD
-            );
-}
-
-void broadcast_row_by_rank(float* data, int sender_rank, MPI_Request* request){
-    MPI_Ibcast(
-            data,
-            DIMENSION + 1,
-            MPI_FLOAT,
-            sender_rank,
-            MPI_COMM_WORLD,
-            request
-            );
 }
 
 void broadcast_matrix_by_rank(float* data, int sender_rank){
@@ -120,6 +96,7 @@ int main(int argc, char *argv[])
                 update_values(l, u, step, row, row_buffer, DIMENSION);
             }
         }
+
         for (int worker = 0; worker < node.world_size; ++worker) {
             float* active_buffer;
             if(worker == node.rank){ // send values
@@ -127,6 +104,7 @@ int main(int argc, char *argv[])
             } else { //receive values
                 active_buffer = receive_buffer;
             }
+
             broadcast_matrix_by_rank(active_buffer, worker);
             if(worker != node.rank){ // send values
                 for (int row = step + 1; row < DIMENSION; ++row) {
@@ -144,8 +122,8 @@ int main(int argc, char *argv[])
     double  duration = end_time - start_time;
 
     MPI_Finalize();
-    float* check = mul_matrix(l, u, DIMENSION);
 
+    float* check = mul_matrix(l, u, DIMENSION);
 
     if(!compare_matrix(matrix, check, DIMENSION)){
         return 1;
