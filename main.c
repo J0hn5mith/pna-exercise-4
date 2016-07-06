@@ -5,7 +5,7 @@
 #include <math.h>
 
 
-#define DIMENSION 100
+#define DIMENSION 3
 #define SIZE DIMENSION*DIMENSION
 struct Node{
     int rank;
@@ -75,8 +75,8 @@ void verbose_mpi_status(MPI_Status status){
         printf("Unknown\n");
     }
 }
-int main(int argc, char *argv[])
-{
+
+int main(int argc, char *argv[]) {
     struct Node node = init();
 
     float* matrix = init_matrix(node);
@@ -89,20 +89,20 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     double start_time = MPI_Wtime();
     for (int step = 0; step < DIMENSION; ++step) {
+
         int remaining_rows = DIMENSION - step - 1;
         int block_size = ceil(remaining_rows/node.world_size);
-        int start = block_size * node.rank;
-        if(node.rank + 1 == node.world_size){
-            // If block is last block it might be smaller
+        int start = step + 1 + block_size * node.rank;
+        if(remaining_rows%node.world_size != 0 && node.rank + 1 == node.world_size){
             block_size = remaining_rows%node.world_size;
         }
-        for (int row = step + 1; row < DIMENSION; ++row) {
+        int end = start +  block_size;
+        /*printf("Start: %d\nSize: %d\nRemaining Rows:%d\n", start, block_size, remaining_rows);*/
+        for (int row = start; row < end; ++row) {
             int buffer_row = row/node.world_size;
             float* row_buffer = buffer + buffer_row * (DIMENSION + 1);
-            if(row % node.world_size == node.rank){
-                process_row(step, row, u, row_buffer);
-                update_values(l, u, step, row, row_buffer, DIMENSION);
-            }
+            process_row(step, row, u, row_buffer);
+            update_values(l, u, step, row, row_buffer, DIMENSION);
         }
 
         for (int worker = 0; worker < node.world_size; ++worker) {
@@ -114,33 +114,48 @@ int main(int argc, char *argv[])
             }
 
             broadcast_matrix_by_rank(active_buffer, worker);
+
             if(worker != node.rank){ // send values
-                for (int row = step + 1; row < DIMENSION; ++row) {
-                    if(row % node.world_size == worker){
-                        int buffer_row = row/node.world_size;
-                        float* row_buffer = receive_buffer + buffer_row * (DIMENSION + 1);
-                        update_values(l, u, step, row, row_buffer, DIMENSION);
-                    }
+                int block_size = ceil(remaining_rows/node.world_size);
+                int start = step + 1 + block_size * worker;
+                if(remaining_rows%node.world_size != 0 && worker + 1 == node.world_size){
+                    block_size = remaining_rows%node.world_size;
                 }
-            }
+                int end = start +  block_size;
+                for (int row = start; row < end; ++row) {
+                    int buffer_row = row/node.world_size;
+                    float* row_buffer = active_buffer + buffer_row * (DIMENSION + 1);
+                    update_values(l, u, step, row, row_buffer, DIMENSION);
+                }
+                /*for (int row = step + 1; row < DIMENSION; ++row) {*/
+                /*if(row % node.world_size == worker){*/
+                /*int buffer_row = row/node.world_size;*/
+                /*float* row_buffer = receive_buffer + buffer_row * (DIMENSION + 1);*/
+                /*update_values(l, u, step, row, row_buffer, DIMENSION);*/
+                /*}*/
+                /*}*/
+                /*}*/
         }
     }
-    MPI_Barrier(MPI_COMM_WORLD);
-    double end_time = MPI_Wtime();
-    double  duration = end_time - start_time;
+}
+MPI_Barrier(MPI_COMM_WORLD);
+double end_time = MPI_Wtime();
+double  duration = end_time - start_time;
 
-    MPI_Finalize();
+MPI_Finalize();
 
-    float* check = mul_matrix(l, u, DIMENSION);
+float* check = mul_matrix(l, u, DIMENSION);
+print_matrix(u, DIMENSION);
 
-    if(!compare_matrix(matrix, check, DIMENSION)){
-        return 1;
-    }
+if(!compare_matrix(matrix, check, DIMENSION)){
+    printf("Error!!\n");
+    return 1;
+}
 
-    if(node.rank == 0){
-        printf("Duration: %f\n", duration);
-        printf("Successfully finished job\n");
-    }
+if(node.rank == 0){
+    printf("Duration: %f\n", duration);
+    printf("Successfully finished job\n");
+}
 
-    return 0;
+return 0;
 }

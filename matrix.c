@@ -11,10 +11,12 @@ void print_row(float* row, int dimension){
 }
 
 void print_matrix(float* matrix, int dimension){
+    printf("=================\n");
     for (int i = 0; i < dimension; ++i) {
         int offset = i * dimension;
         print_row(matrix + offset, dimension);
     }
+    printf("=================\n");
 }
 
 float* generate_matrix(int dimension){
@@ -66,7 +68,7 @@ void update_values(float* l, float* u, int step, int row, float* new_values, int
 }
 
 void copy_matrix(float* original, float* copy, int dimension){
-    memcpy(original, copy, dimension*dimension*sizeof(float));
+    memcpy(copy, original, dimension*dimension*sizeof(float));
 }
 
 float*  mul_matrix(float* left, float* right, int dimension){
