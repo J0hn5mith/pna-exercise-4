@@ -52,10 +52,15 @@ float set(float* matrix, int row, int column, float value, int dimension){
     return value;
 }
 
-void set_line(float* matrix, int row, float* values, int dimension){
-    int offset = dimension*row;
+
+void set_lines(float* matrix, int start_row, int num_rows, float* values, int dimension){
+    int offset = dimension*start_row;
     float* start = matrix + offset;
-    memcpy(start, values, dimension*sizeof(float));
+    memcpy(start, values, num_rows * dimension*sizeof(float));
+}
+
+void set_line(float* matrix, int row, float* values, int dimension){
+    set_lines(matrix, row, 1, values, dimension);
 }
 
 float get(float* matrix, int row, int column, int dimension){
@@ -71,7 +76,7 @@ void copy_matrix(float* original, float* copy, int dimension){
     memcpy(copy, original, dimension*dimension*sizeof(float));
 }
 
-float*  mul_matrix(float* left, float* right, int dimension){
+float* mul_matrix(float* left, float* right, int dimension){
     float* result  = (float*)malloc(dimension*dimension*sizeof(float));
     for (int i = 0; i < dimension; ++i) {
         for (int ii = 0; ii < dimension; ++ii) {
@@ -93,7 +98,7 @@ int  compare_matrix(float* left, float* right, int dimension){
             if(difference > 0.1){
                 printf("ERROR: %f (%d %d)\n",difference, i, ii);
                 return 0;
-                }
+            }
         }
     }
     return 1;
