@@ -53,14 +53,14 @@ float set(float* matrix, int row, int column, float value, int dimension){
 }
 
 
-void set_lines(float* matrix, int start_row, int num_rows, float* values, int dimension){
+void set_rows(float* matrix, int start_row, int num_rows, float* values, int dimension){
     int offset = dimension*start_row;
     float* start = matrix + offset;
     memcpy(start, values, num_rows * dimension*sizeof(float));
 }
 
-void set_line(float* matrix, int row, float* values, int dimension){
-    set_lines(matrix, row, 1, values, dimension);
+void set_row(float* matrix, int row, float* values, int dimension){
+    set_rows(matrix, row, 1, values, dimension);
 }
 
 float get(float* matrix, int row, int column, int dimension){
@@ -68,7 +68,7 @@ float get(float* matrix, int row, int column, int dimension){
 }
 
 void update_values(float* l, float* u, int step, int row, float* new_values, int dimension){
-    set_line(u, row, new_values, dimension);
+    set_row(u, row, new_values, dimension);
     set(l, row, step, new_values[dimension], dimension);
 }
 

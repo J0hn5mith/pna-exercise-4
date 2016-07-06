@@ -5,7 +5,7 @@
 #include <math.h>
 
 
-#define DIMENSION 6
+#define DIMENSION 7
 #define SIZE DIMENSION*DIMENSION
 #define R_DIMENSION  DIMENSION
 #define R_SIZE R_DIMENSION*R_DIMENSION
@@ -95,32 +95,27 @@ int main(int argc, char *argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
     start_timer();
     for (int step = 0; step < DIMENSION; ++step) {
-        int remaining_rows = DIMENSION - step - 1;
 
         // Calculate Own values
-        if(node.rank < remaining_rows ){
-            int block_size = ceil((float)remaining_rows/(float)node.world_size);
-            int start = step + 1 + block_size * node.rank;
-            if(remaining_rows%node.world_size != 0 && node.rank + 1 == node.world_size){
-                /*block_size = remaining_rows%node.world_size;*/
-                block_size = remaining_rows%block_size;
-            }
-            int end = start +  block_size;
-            for (int row = start; row < end; ++row) {
-                process_row(step, row, l, u);
-            }
+        int remaining_rows = DIMENSION - step - 1;
+        int block_size = ceil(remaining_rows/node.world_size);
+        int start = step + 1 + block_size * node.rank;
+        if(remaining_rows%node.world_size != 0 && node.rank + 1 == node.world_size){
+            block_size = remaining_rows%node.world_size;
+        }
+        int end = start +  block_size;
+        for (int row = start; row < end; ++row) {
+            process_row(step, row, l, u);
         }
 
         // Communicate u values
         for (int worker = 0; worker < node.world_size; ++worker) {
-            if(worker < remaining_rows ){
-                int block_size = ceil((float)remaining_rows/(float)node.world_size);
-                int block_start = step + 1 + block_size * worker;
-                if(remaining_rows%node.world_size != 0 && worker + 1 == node.world_size){
-                        block_size = remaining_rows%block_size;
-                }
-                broadcast_rows(u, worker, block_start, block_size);
+            int block_size = ceil(remaining_rows/node.world_size);
+            int block_start = step + 1 + block_size * worker;
+            if(remaining_rows%node.world_size != 0 && worker + 1 == node.world_size){
+                block_size = remaining_rows%node.world_size;
             }
+            broadcast_rows(u, worker, block_start, block_size);
         }
     }
 

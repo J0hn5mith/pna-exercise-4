@@ -19,7 +19,7 @@ TEST_SOURCES=test.cpp $(COMMON_SOURCES)
 TEST_OBJECTS=$(TEST_SOURCES:.c=.o)
 EXECUTABLE=app
 MPI=`which mpirun`
-NUM_THREADS=1
+NUM_THREADS=2
 
 all: compile link run clean
 
