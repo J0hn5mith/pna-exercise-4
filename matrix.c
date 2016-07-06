@@ -20,11 +20,17 @@ void print_matrix(float* matrix, int dimension){
 }
 
 float* generate_matrix(int dimension){
-    //srand(time(0));
     srand(1);
     float* matrix = (float*)malloc(dimension*dimension*sizeof(float));
-    for (int i = 0; i < dimension*dimension; ++i) {
-        matrix[i] = (float)(rand()%9 + 1);
+    int counter = 0;
+    for (int i = 0; i < dimension; ++i) {
+        for (int ii = 0; ii < dimension; ++ii) {
+            float value = (float)(rand()%9 + 1);
+            if(i == ii){
+                value += 100;
+            }
+            matrix[counter++] = value;
+        }
     }
 
     return (float*)matrix;

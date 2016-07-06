@@ -5,10 +5,8 @@
 #include <math.h>
 
 
-#define DIMENSION 6
+#define DIMENSION 200
 #define SIZE DIMENSION*DIMENSION
-#define R_DIMENSION  DIMENSION
-#define R_SIZE R_DIMENSION*R_DIMENSION
 
 struct Node{
     int rank;
@@ -67,9 +65,8 @@ void broadcast_rows(float* matrix, int sender, int start_row, int num_rows){
             );
 }
 
-void init(struct Node* node, float** m, float** l, float** u, float** rb){
+void init(struct Node* node, float** m, float** l, float** u){
     *m = init_matrix(*node);
-    *rb  = (float*)malloc(R_SIZE*sizeof(float));
     *u = generate_unit_matrix(DIMENSION);
     copy_matrix(*m, *u, DIMENSION);
     *l = generate_unit_matrix(DIMENSION);
@@ -89,8 +86,8 @@ void stop_timer(){
 
 int main(int argc, char *argv[]) {
     struct Node node = init_mpi();
-    float*  matrix, *u, *l, *receive_buffer = NULL;
-    init(&node, &matrix, &l, &u, &receive_buffer);
+    float*  matrix, *u, *l = NULL;
+    init(&node, &matrix, &l, &u);
 
     MPI_Barrier(MPI_COMM_WORLD);
     start_timer();
@@ -100,13 +97,14 @@ int main(int argc, char *argv[]) {
         // Calculate Own values
         if(node.rank < remaining_rows ){
             int block_size = ceil((float)remaining_rows/(float)node.world_size);
-            int start = step + 1 + block_size * node.rank;
-            if(remaining_rows%node.world_size != 0 && node.rank + 1 == node.world_size){
-                /*block_size = remaining_rows%node.world_size;*/
-                block_size = remaining_rows%block_size;
+            int block_start = step + 1 + block_size * node.rank;
+            if(node.rank + 1 == node.world_size){
+                if(remaining_rows%block_size != 0){
+                    block_size = remaining_rows%block_size;
+                }
             }
-            int end = start +  block_size;
-            for (int row = start; row < end; ++row) {
+            int end = block_start +  block_size;
+            for (int row = block_start; row < end; ++row) {
                 process_row(step, row, l, u);
             }
         }
@@ -116,20 +114,24 @@ int main(int argc, char *argv[]) {
             if(worker < remaining_rows ){
                 int block_size = ceil((float)remaining_rows/(float)node.world_size);
                 int block_start = step + 1 + block_size * worker;
-                if(remaining_rows%node.world_size != 0 && worker + 1 == node.world_size){
+                if(worker + 1 == node.world_size){
+                    if(remaining_rows%node.world_size != 0){
                         block_size = remaining_rows%block_size;
+                    }
                 }
+                /*printf("Hello\n");*/
                 broadcast_rows(u, worker, block_start, block_size);
+                /*printf("Worker: %d; Start: %d; Size: %d\n", worker, block_start, block_size);*/
+                broadcast_rows(l, worker, block_start, block_size);
+                /*printf("Bye\n");*/
             }
         }
     }
-
     MPI_Barrier(MPI_COMM_WORLD);
     stop_timer();
     MPI_Finalize();
 
     float* check = mul_matrix(l, u, DIMENSION);
-    print_matrix(u, DIMENSION);
 
     if(!compare_matrix(matrix, check, DIMENSION)){
         printf("Error!!\n");
@@ -140,6 +142,9 @@ int main(int argc, char *argv[]) {
         printf("Duration: %f\n", duration);
         printf("Successfully finished job\n");
     }
+    free(matrix);
+    free(l);
+    free(u);
 
     return 0;
 }
