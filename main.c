@@ -5,7 +5,7 @@
 #include <math.h>
 
 
-#define DIMENSION 200
+#define DIMENSION 2000
 #define SIZE DIMENSION*DIMENSION
 
 struct Node{
@@ -96,15 +96,16 @@ int main(int argc, char *argv[]) {
 
         // Calculate Own values
         if(node.rank < remaining_rows ){
-            int block_size = ceil((float)remaining_rows/(float)node.world_size);
-            int block_start = step + 1 + block_size * node.rank;
-            if(node.rank + 1 == node.world_size){
-                if(remaining_rows%block_size != 0){
-                    block_size = remaining_rows%block_size;
-                }
+            int block_size = floor((float)remaining_rows/(float)node.world_size);
+            int block_start = remaining_rows - block_size * (node.world_size - node.rank);
+            if(block_size == 0 || node.rank < remaining_rows%block_size){
+                block_size++;
+                block_start = step + 1 + block_size * node.rank;
             }
             int end = block_start +  block_size;
             for (int row = block_start; row < end; ++row) {
+                /*printf("Worker: %d; Start: %d; Size: %d; End: %d \n", node.rank, block_start, block_size, end);*/
+                /*printf("Rank\n");*/
                 process_row(step, row, l, u);
             }
         }
@@ -112,18 +113,14 @@ int main(int argc, char *argv[]) {
         // Communicate u values
         for (int worker = 0; worker < node.world_size; ++worker) {
             if(worker < remaining_rows ){
-                int block_size = ceil((float)remaining_rows/(float)node.world_size);
-                int block_start = step + 1 + block_size * worker;
-                if(worker + 1 == node.world_size){
-                    if(remaining_rows%node.world_size != 0){
-                        block_size = remaining_rows%block_size;
-                    }
+                int block_size = floor((float)remaining_rows/(float)node.world_size);
+                int block_start = remaining_rows - block_size * (node.world_size - worker);
+                if(block_size == 0 || worker < remaining_rows%block_size){
+                    block_size++;
+                    block_start = step + 1 + block_size * worker;
                 }
-                /*printf("Hello\n");*/
                 broadcast_rows(u, worker, block_start, block_size);
-                /*printf("Worker: %d; Start: %d; Size: %d\n", worker, block_start, block_size);*/
                 broadcast_rows(l, worker, block_start, block_size);
-                /*printf("Bye\n");*/
             }
         }
     }

@@ -27,7 +27,7 @@ float* generate_matrix(int dimension){
         for (int ii = 0; ii < dimension; ++ii) {
             float value = (float)(rand()%9 + 1);
             if(i == ii){
-                value += 100;
+                value += 10000;
             }
             matrix[counter++] = value;
         }

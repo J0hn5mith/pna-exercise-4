@@ -18,8 +18,9 @@ OBJECTS=$(SOURCES:.c=.o)
 TEST_SOURCES=test.cpp $(COMMON_SOURCES)
 TEST_OBJECTS=$(TEST_SOURCES:.c=.o)
 EXECUTABLE=app
-MPI=`which mpirun`
-NUM_THREADS=5
+MPI_RUN=`which mpirun`
+MPI_RUN_FLAGS=
+NUM_THREADS=4
 
 all: compile link run clean
 
@@ -50,7 +51,7 @@ link: $(EXECUTABLE)
 
 run:
 ifeq ($(PLATFORM), 0)
-	$(MPI) -n ${NUM_THREADS} ./$(EXECUTABLE)
+	$(MPI_RUN) $(MPI_RUN_FLAGS) -n ${NUM_THREADS} ./$(EXECUTABLE)
 else
 	pjsub job.zsh
 endif
