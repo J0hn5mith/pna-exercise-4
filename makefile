@@ -1,5 +1,11 @@
 #map <leader>r :!c++ -O3 -o app %; ./app<CR>
+OS := $(shell uname)
+ifeq ($(OS), LINUX)
 PLATFORM=1
+else
+PLATFORM=0
+endif
+
 
 ifeq ($(PLATFORM), 0)
 CCOMPILER=gcc
@@ -12,7 +18,7 @@ CFLAGS=-Kfast
 endif
 
 LDFLAGS=
-COMMON_SOURCES=matrix.c
+COMMON_SOURCES=matrix.c utils.c
 SOURCES=main.c $(COMMON_SOURCES)
 OBJECTS=$(SOURCES:.c=.o)
 TEST_SOURCES=test.cpp $(COMMON_SOURCES)

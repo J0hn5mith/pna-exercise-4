@@ -1,11 +1,13 @@
-#include "matrix.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
 #include <math.h>
 
+#include "matrix.h"
+#include "utils.h"
 
-#define DIMENSION 1000
+
+#define DIMENSION 600
 #define SIZE DIMENSION*DIMENSION
 
 struct Node{
@@ -72,17 +74,9 @@ void init(struct Node* node, float** m, float** l, float** u){
     *l = generate_unit_matrix(DIMENSION);
 }
 
-static double start_time;
-static double end_time;
-static double  duration;
-void start_timer(){
-    start_time = MPI_Wtime();
-}
-
-void stop_timer(){
-    end_time = MPI_Wtime();
-    duration = end_time - start_time;
-}
+struct Timer timer_global = {0};
+struct Timer timer_computation = {0};
+struct Timer timer_communication = {0};
 
 int main(int argc, char *argv[]) {
     struct Node node = init_mpi();
@@ -90,11 +84,12 @@ int main(int argc, char *argv[]) {
     init(&node, &matrix, &l, &u);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    start_timer();
+    start_timer(&timer_global);
     for (int step = 0; step < DIMENSION; ++step) {
         int remaining_rows = DIMENSION - step - 1;
 
         // Calculate Own values
+        start_timer(&timer_computation);
         if(node.rank < remaining_rows ){
             int block_size = floor((float)remaining_rows/(float)node.world_size);
             int block_start = remaining_rows - block_size * (node.world_size - node.rank);
@@ -104,13 +99,12 @@ int main(int argc, char *argv[]) {
             }
             int end = block_start +  block_size;
             for (int row = block_start; row < end; ++row) {
-                /*printf("Worker: %d; Start: %d; Size: %d; End: %d \n", node.rank, block_start, block_size, end);*/
-                /*printf("Rank\n");*/
                 process_row(step, row, l, u);
             }
         }
+        stop_timer(&timer_computation);
 
-        // Communicate u values
+        start_timer(&timer_communication);
         for (int worker = 0; worker < node.world_size; ++worker) {
             if(worker < remaining_rows ){
                 int block_size = floor((float)remaining_rows/(float)node.world_size);
@@ -123,9 +117,11 @@ int main(int argc, char *argv[]) {
                 broadcast_rows(l, worker, block_start, block_size);
             }
         }
+        stop_timer(&timer_communication);
     }
+
     MPI_Barrier(MPI_COMM_WORLD);
-    stop_timer();
+    stop_timer(&timer_global);
     MPI_Finalize();
 
     float* check = mul_matrix(l, u, DIMENSION);
@@ -136,9 +132,12 @@ int main(int argc, char *argv[]) {
     }
 
     if(node.rank == 0){
-        printf("Duration: %f\n", duration);
+        printf("Runtime: : %f\n", timer_global.duration);
+        printf("Computation runtime: %f\n", timer_computation.duration);
+        printf("Communication runtime: %f\n", timer_communication.duration);
         printf("Successfully finished job\n");
     }
+
     free(matrix);
     free(l);
     free(u);

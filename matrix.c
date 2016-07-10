@@ -73,11 +73,6 @@ float get(float* matrix, int row, int column, int dimension){
     return matrix[dimension*row + column];
 }
 
-void update_values(float* l, float* u, int step, int row, float* new_values, int dimension){
-    set_row(u, row, new_values, dimension);
-    set(l, row, step, new_values[dimension], dimension);
-}
-
 void copy_matrix(float* original, float* copy, int dimension){
     memcpy(copy, original, dimension*dimension*sizeof(float));
 }
