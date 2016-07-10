@@ -1,5 +1,5 @@
 #map <leader>r :!c++ -O3 -o app %; ./app<CR>
-PLATFORM=0
+PLATFORM=1
 
 ifeq ($(PLATFORM), 0)
 CCOMPILER=gcc
@@ -57,4 +57,5 @@ else
 endif
 
 clean:
-	rm *o
+	rm -f *o
+	rm -f job\.zsh\.o*

@@ -5,7 +5,7 @@
 #include <math.h>
 
 
-#define DIMENSION 2000
+#define DIMENSION 1000
 #define SIZE DIMENSION*DIMENSION
 
 struct Node{
