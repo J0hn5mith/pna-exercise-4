@@ -1,6 +1,6 @@
 #map <leader>r :!c++ -O3 -o app %; ./app<CR>
 OS := $(shell uname)
-ifeq ($(OS), LINUX)
+ifeq ($(OS), Linux)
 PLATFORM=1
 else
 PLATFORM=0
@@ -26,7 +26,7 @@ TEST_OBJECTS=$(TEST_SOURCES:.c=.o)
 EXECUTABLE=app
 MPI_RUN=`which mpirun`
 MPI_RUN_FLAGS=
-NUM_THREADS=4
+NUM_THREADS=1
 
 all: compile link run clean
 

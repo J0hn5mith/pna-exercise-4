@@ -7,7 +7,7 @@
 #include "utils.h"
 
 
-#define DIMENSION 600
+#define DIMENSION 3600
 #define SIZE DIMENSION*DIMENSION
 
 struct Node{
